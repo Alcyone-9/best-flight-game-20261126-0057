@@ -1,8 +1,8 @@
 # SKYLINE RIDGE
 
-![best-flight-game-20261126-0057](https://make.fun/badge/best-flight-game-20261126-0057.svg)
-![rank](https://make.fun/badge/best-flight-game-20261126-0057/rank.svg)
-![reward](https://make.fun/badge/best-flight-game-20261126-0057/reward.svg)
+[![make.fun · best-flight-game-20261126-0057](https://make.fun/badge/best-flight-game-20261126-0057.svg)](https://make.fun/bounty/best-flight-game-20261126-0057?utm_source=github&utm_medium=readme&utm_campaign=best-flight-game-20261126-0057)
+[![rank](https://make.fun/badge/best-flight-game-20261126-0057/Alcyone-9/best-flight-game-20261126-0057/rank.svg)](https://make.fun/bounty/best-flight-game-20261126-0057/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=best-flight-game-20261126-0057)
+[![reward](https://make.fun/badge/best-flight-game-20261126-0057/Alcyone-9/best-flight-game-20261126-0057/reward.svg)](https://make.fun/bounty/best-flight-game-20261126-0057?utm_source=github&utm_medium=readme&utm_campaign=best-flight-game-20261126-0057)
 
 A complete original 3D flight game for the [make.fun best flight game bounty](https://make.fun/bounty/best-flight-game-20261126-0057). One island, one runway, three sorties — fly it like you mean it.
 
