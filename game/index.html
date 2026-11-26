@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SKYLINE RIDGE — 3D Flight Game</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0b1c2c;
+    font-family: "Segoe UI", Verdana, sans-serif; color: #eaf6ff; }
+  #game-canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* ---------- HUD ---------- */
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+  .hidden { display: none !important; }
+  .panel { background: rgba(8, 24, 38, 0.62); border: 1px solid rgba(140, 220, 255, 0.35);
+    border-radius: 8px; padding: 8px 12px; backdrop-filter: blur(2px); }
+  .label { font-size: 10px; letter-spacing: 2px; color: #8fd4ff; text-transform: uppercase; }
+  .value { font-size: 26px; font-weight: 700; color: #fff; line-height: 1.1;
+    text-shadow: 0 0 8px rgba(80, 200, 255, 0.7); font-variant-numeric: tabular-nums; }
+  #hud-left { position: absolute; left: 14px; top: 14px; display: flex; gap: 10px; }
+  #hud-left .panel { min-width: 118px; text-align: center; }
+  #hud-right { position: absolute; right: 14px; top: 14px; width: 210px;
+    display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; }
+  .bar-row .label { width: 62px; flex: none; }
+  .bar { flex: 1; height: 12px; background: rgba(255,255,255,0.14); border-radius: 6px; overflow: hidden; }
+  .bar > div { height: 100%; border-radius: 6px; transition: width 0.15s linear; }
+  #throttle-fill { background: #ffb13d; width: 0%; }
+  #fuel-fill { background: #3fce6d; width: 100%; }
+  #damage-fill { background: #e0483e; width: 0%; }
+  .bar-num { width: 38px; text-align: right; font-size: 12px; font-weight: 700; }
+  #hud-score { position: absolute; right: 14px; top: 158px; text-align: right; }
+  #hud-score .value { font-size: 34px; color: #ffd76a; }
+  #compass { position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
+    width: 260px; overflow: hidden; text-align: center; padding: 6px 0 4px; }
+  #compass-strip { position: relative; height: 20px; font-size: 15px; font-weight: 700; color: #fff; }
+  #compass-strip span { position: absolute; transform: translateX(-50%); }
+  #compass::after { content: ""; position: absolute; left: 50%; top: 2px; margin-left: -5px;
+    border: 5px solid transparent; border-top-color: #ffb13d; }
+  #horizon-box { position: absolute; left: 14px; bottom: 14px; text-align: center; }
+  #horizon { display: block; border-radius: 50%; background: #123;
+    border: 2px solid rgba(140, 220, 255, 0.4); }
+  #mission { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+    font-size: 15px; font-weight: 700; letter-spacing: 1px; color: #ffe9b0;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8); white-space: nowrap; }
+  #timer { position: absolute; left: 50%; bottom: 42px; transform: translateX(-50%);
+    font-size: 30px; font-weight: 800; color: #eaf6ff; text-shadow: 0 0 10px rgba(80,200,255,0.8); }
+  #banner { position: absolute; left: 50%; top: 22%; transform: translateX(-50%);
+    font-size: 24px; font-weight: 800; letter-spacing: 2px; color: #ffe9b0;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9); opacity: 0; transition: opacity 0.3s;
+    white-space: nowrap; }
+  #warn { position: absolute; left: 50%; top: 30%; transform: translateX(-50%);
+    font-size: 19px; font-weight: 800; letter-spacing: 1px; color: #ff6b5e;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9); opacity: 0; white-space: nowrap; }
+  #view-label, #mute-label { position: absolute; right: 14px; bottom: 14px; font-size: 11px;
+    letter-spacing: 1px; color: #bfe6ff; opacity: 0.85; text-align: right; line-height: 1.6; }
+
+  /* ---------- Overlays ---------- */
+  .overlay { position: fixed; inset: 0; z-index: 10; display: flex;
+    align-items: center; justify-content: center;
+    background: linear-gradient(160deg, rgba(6, 26, 44, 0.58), rgba(4, 16, 30, 0.66)); }
+  .card { text-align: center; max-width: 640px; padding: 34px 44px; }
+  .card h1 { font-size: 58px; letter-spacing: 6px; color: #ffd76a;
+    text-shadow: 0 0 24px rgba(255, 180, 60, 0.55); }
+  .card h1 .ridge { color: #7fe3e0; }
+  .card h2 { font-size: 34px; letter-spacing: 4px; color: #ffd76a; margin-bottom: 8px; }
+  .tagline { font-size: 16px; color: #bfe6ff; margin: 6px 0 22px; letter-spacing: 1px; }
+  .missions { display: flex; gap: 12px; justify-content: center; margin: 18px 0; }
+  .mission-btn { pointer-events: auto; cursor: pointer; width: 180px; padding: 14px 10px;
+    background: rgba(20, 60, 84, 0.85); border: 2px solid rgba(140, 220, 255, 0.5);
+    border-radius: 10px; color: #eaf6ff; }
+  .mission-btn:hover { border-color: #ffd76a; background: rgba(40, 90, 120, 0.9); }
+  .mission-btn b { display: block; font-size: 16px; letter-spacing: 1px; margin-bottom: 6px;
+    color: #ffd76a; }
+  .mission-btn span { font-size: 12px; line-height: 1.4; color: #cfeaff; display: block; }
+  .mission-btn .key { margin-top: 8px; font-size: 11px; color: #8fd4ff; }
+  .controls { font-size: 13px; line-height: 1.9; color: #cfeaff; margin: 14px 0; }
+  .controls b { color: #fff; }
+  .btn { pointer-events: auto; cursor: pointer; display: inline-block; margin: 8px 6px 0;
+    padding: 12px 26px; font-size: 16px; font-weight: 700; letter-spacing: 1px;
+    color: #08222f; background: #ffd76a; border: none; border-radius: 8px; }
+  .btn.ghost { background: transparent; color: #eaf6ff; border: 2px solid rgba(140, 220, 255, 0.6); }
+  .btn:hover { filter: brightness(1.1); }
+  .stats { font-size: 17px; line-height: 2.1; color: #eaf6ff; margin: 10px 0 18px; }
+  .stats b { color: #ffd76a; font-size: 22px; }
+  .best { font-size: 13px; color: #8fd4ff; letter-spacing: 1px; margin-top: 16px; }
+  #crash-cause { font-size: 18px; color: #ff9a8a; margin: 4px 0 10px; }
+</style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+
+<!-- ================= HUD ================= -->
+<div id="hud" class="hidden">
+  <div id="hud-left">
+    <div class="panel"><div class="label">Altitude</div><div class="value" id="alt">0 ft</div></div>
+    <div class="panel"><div class="label">Airspeed</div><div class="value" id="spd">0 kt</div></div>
+    <div class="panel"><div class="label">Heading</div><div class="value" id="hdg">000°</div></div>
+  </div>
+  <div id="compass" class="panel"><div id="compass-strip"></div></div>
+  <div id="hud-right">
+    <div class="panel bar-row"><span class="label">Throttle</span><div class="bar"><div id="throttle-fill"></div></div></div>
+    <div class="panel bar-row"><span class="label">Fuel</span><div class="bar"><div id="fuel-fill"></div></div><span class="bar-num" id="fuel-num">100%</span></div>
+    <div class="panel bar-row"><span class="label">Damage</span><div class="bar"><div id="damage-fill"></div></div><span class="bar-num" id="damage-num">0%</span></div>
+  </div>
+  <div id="hud-score" class="panel"><div class="label">Score</div><div class="value" id="score">0</div></div>
+  <div id="horizon-box"><canvas id="horizon" width="140" height="140"></canvas><div class="label">Attitude</div></div>
+  <div id="timer">0:00</div>
+  <div id="mission">RING RUN</div>
+  <div id="banner"></div>
+  <div id="warn"></div>
+  <div id="view-label">CHASE<br><span id="mute-label">SOUND ON (M)</span></div>
+</div>
+
+<!-- ================= TITLE ================= -->
+<div id="overlay-title" class="overlay">
+  <div class="card">
+    <h1>SKYLINE <span class="ridge">RIDGE</span></h1>
+    <p class="tagline">One island. One runway. Three sorties. Fly it like you mean it.</p>
+    <div class="missions">
+      <button class="mission-btn" data-mission="0"><b>1 · RING RUN</b><span>Thread 8 glowing rings in order against the clock.</span><span class="key">Press 1</span></button>
+      <button class="mission-btn" data-mission="1"><b>2 · ISLAND HOP</b><span>Visit 5 checkpoints, then land back on the runway.</span><span class="key">Press 2</span></button>
+      <button class="mission-btn" data-mission="2"><b>3 · CANYON TIME TRIAL</b><span>Low and fast through 10 valley gates. Stay under 90 m.</span><span class="key">Press 3</span></button>
+    </div>
+    <p class="controls">
+      <b>W / S</b> throttle &nbsp;·&nbsp; <b>↑ ↓</b> pitch &nbsp;·&nbsp; <b>← →</b> bank &nbsp;·&nbsp; <b>A / D</b> rudder<br>
+      <b>Mouse</b> steer toward pointer &nbsp;·&nbsp; <b>Click</b> speed boost (burns extra fuel)<br>
+      <b>C</b> chase / cockpit camera &nbsp;·&nbsp; <b>P</b> pause &nbsp;·&nbsp; <b>R</b> restart &nbsp;·&nbsp; <b>M</b> mute<br>
+      Watch your speed: below stall the nose drops, and a hard pull at full speed buffets the wings.
+    </p>
+    <p class="best">BEST SCORE: <span id="best-score">0</span></p>
+  </div>
+</div>
+
+<!-- ================= PAUSE ================= -->
+<div id="overlay-pause" class="overlay hidden">
+  <div class="card">
+    <h2>PAUSED</h2>
+    <p class="tagline">The island waits. The fuel does not burn while you think.</p>
+    <button class="btn" id="btn-resume">RESUME (P)</button>
+    <button class="btn ghost" id="btn-restart-pause">RESTART (R)</button>
+  </div>
+</div>
+
+<!-- ================= COMPLETE ================= -->
+<div id="overlay-complete" class="overlay hidden">
+  <div class="card">
+    <h2>SORTIE COMPLETE</h2>
+    <p class="tagline">Wheels down, rings cleared, island conquered.</p>
+    <div class="stats">
+      SCORE <b id="final-score">0</b><br>
+      RINGS <b id="final-rings">0 / 0</b> &nbsp;·&nbsp; TIME <b id="final-time">0:00</b><br>
+      FUEL LEFT <b id="final-fuel">0%</b> &nbsp;·&nbsp; DAMAGE <b id="final-damage">0%</b>
+    </div>
+    <button class="btn" id="btn-again">FLY AGAIN (R)</button>
+    <button class="btn ghost" id="btn-title-again">CHANGE SORTIE</button>
+    <p class="best">BEST SCORE: <span id="final-best">0</span></p>
+  </div>
+</div>
+
+<!-- ================= CRASH ================= -->
+<div id="overlay-crash" class="overlay hidden">
+  <div class="card">
+    <h2>CRASHED</h2>
+    <p id="crash-cause">Crashed</p>
+    <div class="stats">SCORE <b id="crash-score">0</b></div>
+    <button class="btn" id="btn-crash-again">TRY AGAIN (R)</button>
+    <button class="btn ghost" id="btn-crash-title">TITLE SCREEN</button>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="src/config.js"></script>
+<script src="src/random.js"></script>
+<script src="src/terrain.js"></script>
+<script src="src/aircraft.js"></script>
+<script src="src/input.js"></script>
+<script src="src/flight.js"></script>
+<script src="src/missions.js"></script>
+<script src="src/hud.js"></script>
+<script src="src/audio.js"></script>
+<script src="src/shots.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
